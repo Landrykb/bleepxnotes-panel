@@ -66,6 +66,26 @@
       <circle cx="12" cy="12" r="10"/>
       <path d="M12 6v6l4 2"/>
     </symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24">
+      <rect x="6" y="6" width="12" height="12" rx="2.5" fill="currentColor"/>
+    </symbol>
+    <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <path d="M14 2v6h6"/>
+      <path d="M16 13H8"/>
+      <path d="M16 17H8"/>
+      <path d="M10 9H8"/>
+    </symbol>
+    <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 2 11 13"/>
+      <path d="M22 2 15 22l-4-9-9-4z"/>
+    </symbol>
+    <symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+      <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>
+      <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+      <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+    </symbol>
   </defs>
 </svg>
 
@@ -107,10 +127,22 @@
 
     <div class="card">
       <h3 class="card-title"><svg class="ic"><use href="#i-pulse"/></svg> Status</h3>
+      <div class="row"><span class="row-label">Notetaker</span><span id="d-live" class="row-value"></span></div>
       <div class="row"><span class="row-label">Listener</span><span id="d-listener" class="row-value"></span></div>
       <div class="row"><span class="row-label">First-call capture</span><span id="d-capture" class="row-value"></span></div>
       <div class="row"><span class="row-label">Chat ID</span><span id="d-chatid" class="row-value mono"></span></div>
       <div class="row" id="d-note-row" hidden><span class="row-label">Note</span><span id="d-note" class="row-value"></span></div>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title"><svg class="ic"><use href="#i-mic"/></svg> Commands</h3>
+      <div class="cmd-row" id="d-joinstop-row" hidden>
+        <button id="d-join" class="btn btn-success cmd-btn"><svg class="ic"><use href="#i-mic"/></svg> Start notetaker</button>
+        <button id="d-stop" class="btn btn-danger cmd-btn"><svg class="ic"><use href="#i-stop"/></svg> Stop</button>
+      </div>
+      <button id="d-activate" class="btn btn-primary" hidden><svg class="ic"><use href="#i-rocket"/></svg> <span id="d-activate-label">Activate BleepxNotes</span></button>
+      <button id="d-ignore" class="btn btn-ghost" hidden>Ignore activation request</button>
+      <p class="cmd-hint" id="d-cmd-hint" hidden></p>
     </div>
 
     <div class="card">
@@ -137,6 +169,17 @@
         <button id="d-lang-fr" class="seg-btn">Français</button>
         <button id="d-lang-en" class="seg-btn">English</button>
       </div>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title"><svg class="ic"><use href="#i-file"/></svg> Latest summary</h3>
+      <div id="d-summary-block" hidden>
+        <div class="row"><span class="row-label">Date</span><span id="d-summary-date" class="row-value"></span></div>
+        <div id="d-summary-text" class="summary-text"></div>
+        <p class="cmd-hint" id="d-summary-trunc" hidden>Long summary — the panel shows the first part of it. The full text is one tap away:</p>
+        <button id="d-send-summary" class="btn btn-ghost"><svg class="ic"><use href="#i-send"/></svg> Send the summary to my DM</button>
+      </div>
+      <p class="row-sub pad" id="d-summary-none" hidden>No summary yet for this group — the first summarized call will appear here, readable on this screen.</p>
     </div>
 
     <div class="actions">

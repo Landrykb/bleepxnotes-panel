@@ -7,6 +7,15 @@
  *   toggle_autojoin | toggle_summaries  -> value: boolean
  *   set_lang                            -> value: "fr" | "en"
  *   pause_group | resume_group | unregister_group -> value: null
+ *   join_group | stop_group             -> value: null (live commands)
+ *   send_summary                        -> value: null (full text to the DM;
+ *                                          the text itself is already in
+ *                                          the snapshot, readable in-panel)
+ *   activate_group | ignore_activation  -> value: null (activation flow)
+ *
+ * The panel is self-contained: live status and the latest summary are
+ * read from the snapshot on this screen — nothing sends the user back
+ * to the chat to type a command.
  *
  * Demo mode: when there is no Telegram initData (plain browser / local
  * preview), mock data is loaded, a "Demo data" badge is shown, and sendData
@@ -37,15 +46,29 @@ const els = {
   detail: $("view-detail"),
   dTitle: $("d-title"),
   dStatus: $("d-status"),
+  dLive: $("d-live"),
   dListener: $("d-listener"),
   dCapture: $("d-capture"),
   dChatId: $("d-chatid"),
   dNoteRow: $("d-note-row"),
   dNote: $("d-note"),
+  dJoinStopRow: $("d-joinstop-row"),
+  dJoin: $("d-join"),
+  dStop: $("d-stop"),
+  dActivate: $("d-activate"),
+  dActivateLabel: $("d-activate-label"),
+  dIgnore: $("d-ignore"),
+  dCmdHint: $("d-cmd-hint"),
   dAutojoin: $("d-autojoin"),
   dSummaries: $("d-summaries"),
   dLangFr: $("d-lang-fr"),
   dLangEn: $("d-lang-en"),
+  dSummaryBlock: $("d-summary-block"),
+  dSummaryDate: $("d-summary-date"),
+  dSummaryText: $("d-summary-text"),
+  dSummaryTrunc: $("d-summary-trunc"),
+  dSendSummary: $("d-send-summary"),
+  dSummaryNone: $("d-summary-none"),
   dPause: $("d-pause"),
   dUnregister: $("d-unregister"),
   toast: $("toast"),
@@ -58,21 +81,35 @@ const MOCK_GROUPS = [
     chat_id: -1002001001, title: "IN4BOX — Team", status: "active",
     listener_present: true, lang: "fr", autojoin: true, summaries: true,
     first_call: "verified", note: null,
+    listener_state: "recording", in_call: true, call_started_at: 1730000000,
+    summary: {
+      date: "2026-11-04", truncated: false,
+      text: "Résumé — IN4BOX — Team\n\n• Point d'avancement : la maquette du panneau est validée.\n• Décision : lancement du pilote en janvier.\n• Action : Landry envoie la liste des producteurs avant vendredi.",
+    },
   },
   {
     chat_id: -1002001002, title: "Book Club — Harold & Landry", status: "degraded",
     listener_present: false, lang: "en", autojoin: true, summaries: true,
     first_call: "verified", note: "Listener not seen in the group — capture paused until it rejoins.",
+    listener_state: "recording", in_call: false, call_started_at: null,
+    summary: null,
   },
   {
     chat_id: -1002001003, title: "Weekend Runners", status: "paused",
     listener_present: true, lang: "en", autojoin: false, summaries: true,
     first_call: "pending", note: "Paused from the control centre.",
+    listener_state: "recording", in_call: false, call_started_at: null,
+    summary: {
+      date: "2026-11-01", truncated: false,
+      text: "Summary — Weekend Runners\n\n• Sunday route confirmed: river loop, 12 km.\n• Action: Sam brings the water station list.",
+    },
   },
   {
     chat_id: -1002001004, title: "Studio Sessions", status: "needs_action",
     listener_present: false, lang: "fr", autojoin: true, summaries: false,
     first_call: "pending", note: "Bot needs admin with invite rights to finish pairing — or add the listener account manually once.",
+    listener_state: "recording", in_call: false, call_started_at: null,
+    summary: null,
   },
 ];
 
@@ -121,6 +158,9 @@ const STATUS_META = {
   needs_action:     { label: "Needs action" },
   bot_absent:       { label: "Bot absent" },
   unregistered:     { label: "Unregistered" },
+  awaiting_activation: { label: "Awaiting activation" },
+  pairing:          { label: "Activating…" },
+  pairing_failed:   { label: "Activation failed" },
 };
 
 function esc(s) {
@@ -226,6 +266,16 @@ function setSwitch(btn, on) {
   btn.setAttribute("aria-checked", on ? "true" : "false");
 }
 
+function fmtTime(unixSeconds) {
+  try {
+    return new Date(unixSeconds * 1000).toLocaleTimeString([], {
+      hour: "2-digit", minute: "2-digit",
+    });
+  } catch (e) {
+    return "";
+  }
+}
+
 function renderDetail() {
   const g = current;
   if (!g) return;
@@ -254,6 +304,70 @@ function renderDetail() {
     els.dNote.textContent = g.note;
   } else {
     els.dNoteRow.hidden = true;
+  }
+
+  /* Live state, read straight from the snapshot: this group recording,
+   * the (single) listener busy in another group, or idle. */
+  if (g.in_call) {
+    els.dLive.innerHTML = '<span class="rec-dot"></span> Recording' +
+      (g.call_started_at ? " — since " + esc(fmtTime(g.call_started_at)) : "");
+    els.dLive.className = "row-value rec";
+  } else if (g.listener_state === "recording") {
+    els.dLive.textContent = "In a call in another group";
+    els.dLive.className = "row-value";
+  } else if (g.listener_state === "error") {
+    els.dLive.innerHTML = icon("warn") + " Error — the bot reports it in its chat";
+    els.dLive.className = "row-value bad";
+  } else if (g.listener_state === "unknown") {
+    els.dLive.textContent = "Unknown";
+    els.dLive.className = "row-value";
+  } else {
+    els.dLive.textContent = "Idle";
+    els.dLive.className = "row-value";
+  }
+
+  /* Commands: Start/Stop only make sense on a capture-active group,
+   * so other states get their own working action (activation) or an
+   * honest hint — never a dead button, never "go type a command". */
+  const st = g.status;
+  const busyElsewhere = g.listener_state === "recording" && !g.in_call;
+  els.dJoinStopRow.hidden = st !== "active";
+  els.dJoin.disabled = g.in_call || !g.listener_present || busyElsewhere;
+  els.dStop.disabled = !g.in_call;
+  const activatable = ["awaiting_activation", "needs_action",
+    "pairing_failed", "bot_absent"].includes(st);
+  els.dActivate.hidden = !(activatable || st === "pending_approval");
+  els.dActivateLabel.textContent = st === "pending_approval"
+    ? "Approve activation" : "Activate BleepxNotes";
+  els.dIgnore.hidden = st !== "pending_approval";
+  let hint = null;
+  if (st === "active" && g.in_call) {
+    hint = "Recording now — Stop ends the call and keeps the recording.";
+  } else if (st === "active" && busyElsewhere) {
+    hint = "The notetaker is in a call in another group — it runs one call at a time.";
+  } else if (st === "paused") {
+    hint = "This group is paused. Resume it below to run commands here.";
+  } else if (st === "degraded") {
+    hint = "The listener is not in this group — commands return when it rejoins.";
+  } else if (st === "pairing") {
+    hint = "Activation in progress — the listener is joining this group.";
+  } else if (st === "pending_approval") {
+    hint = "A group admin asked to activate BleepxNotes here. Approve it from this screen, or ignore the request.";
+  }
+  els.dCmdHint.hidden = !hint;
+  els.dCmdHint.textContent = hint || "";
+
+  /* Latest summary: the text itself is in the snapshot — reading it
+   * never leaves this screen. */
+  if (g.summary) {
+    els.dSummaryBlock.hidden = false;
+    els.dSummaryNone.hidden = true;
+    els.dSummaryDate.textContent = g.summary.date || "—";
+    els.dSummaryText.textContent = g.summary.text || "";
+    els.dSummaryTrunc.hidden = !g.summary.truncated;
+  } else {
+    els.dSummaryBlock.hidden = true;
+    els.dSummaryNone.hidden = false;
   }
 
   setSwitch(els.dAutojoin, !!g.autojoin);
@@ -362,6 +476,55 @@ els.dUnregister.addEventListener("click", () => {
   } else if (window.confirm(msg)) {
     doIt();
   }
+});
+
+/* Live commands — the /notes_panel card's Start / Stop, on this screen. */
+
+els.dJoin.addEventListener("click", () => {
+  if (!current || els.dJoin.disabled) return;
+  haptic("impact", "medium");
+  sendAction("join_group", current.chat_id, null);
+  applyLocal((g) => {
+    g.in_call = true;
+    g.listener_state = "recording";
+    g.call_started_at = Math.floor(Date.now() / 1000);
+  });
+  if (!DEMO) toast("Start sent — the notetaker is joining the call");
+});
+
+els.dStop.addEventListener("click", () => {
+  if (!current || els.dStop.disabled) return;
+  haptic("impact", "medium");
+  sendAction("stop_group", current.chat_id, null);
+  applyLocal((g) => {
+    g.in_call = false;
+    g.listener_state = "idle";
+    g.call_started_at = null;
+  });
+  if (!DEMO) toast("Stop sent — recording is being saved");
+});
+
+els.dActivate.addEventListener("click", () => {
+  if (!current) return;
+  haptic("impact", "medium");
+  sendAction("activate_group", current.chat_id, null);
+  applyLocal((g) => { g.status = "pairing"; });
+  if (!DEMO) toast("Activation sent — the listener is joining the group");
+});
+
+els.dIgnore.addEventListener("click", () => {
+  if (!current) return;
+  haptic("impact", "light");
+  sendAction("ignore_activation", current.chat_id, null);
+  applyLocal((g) => { g.status = "awaiting_activation"; });
+  if (!DEMO) toast("Activation request ignored");
+});
+
+els.dSendSummary.addEventListener("click", () => {
+  if (!current) return;
+  haptic("selection");
+  sendAction("send_summary", current.chat_id, null);
+  if (!DEMO) toast("Summary sent — it lands in this chat as a receipt");
 });
 
 /* ----------------------------------------------------------------- boot */
