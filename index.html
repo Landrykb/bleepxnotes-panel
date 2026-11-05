@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BleepxNotes — Group Control</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- ===== Inline SVG icon set (no external assets) ===== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="9" y="2" width="6" height="12" rx="3"/>
+      <path d="M5 10a7 7 0 0 0 14 0"/>
+      <path d="M12 19v3"/>
+    </symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24" fill="currentColor">
+      <rect x="6" y="4" width="4" height="16" rx="1.2"/>
+      <rect x="14" y="4" width="4" height="16" rx="1.2"/>
+    </symbol>
+    <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M8 5.14v13.72a1 1 0 0 0 1.52.86l11-6.86a1 1 0 0 0 0-1.72l-11-6.86A1 1 0 0 0 8 5.14z"/>
+    </symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 6h18"/>
+      <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/>
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+      <path d="M10 11v6M14 11v6"/>
+    </symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M2 12h20"/>
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+    </symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 6 9 17l-5-5"/>
+    </symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <path d="M12 9v4"/>
+      <path d="M12 17h.01"/>
+    </symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m9 18 6-6-6-6"/>
+    </symbol>
+    <symbol id="i-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+    </symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M12 6v6l4 2"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="app-header">
+  <div class="brand">
+    <span class="brand-icon"><svg class="ic"><use href="#i-mic"/></svg></span>
+    <div class="brand-text">
+      <h1>BleepxNotes</h1>
+      <p>Group control centre</p>
+    </div>
+  </div>
+  <span id="demo-badge" class="demo-badge" hidden>Demo data</span>
+</header>
+
+<main>
+  <!-- ============ VIEW: groups list ============ -->
+  <section id="view-list" class="view">
+    <div class="list-head">
+      <h2><svg class="ic"><use href="#i-users"/></svg> Registered groups</h2>
+      <span id="group-count" class="count-pill"></span>
+    </div>
+    <div id="group-list" class="group-list"></div>
+    <div id="list-empty" class="empty-note" hidden>
+      <svg class="ic lg"><use href="#i-shield"/></svg>
+      <p><strong>Owner-only panel.</strong></p>
+      <p>This control centre only works for the bot owner's account.
+      If no groups appear here, add <strong>@bleepxnotes_bot</strong> to a group
+      and tap <strong>Activate BleepxNotes</strong> there first.</p>
+    </div>
+  </section>
+
+  <!-- ============ VIEW: group detail ============ -->
+  <section id="view-detail" class="view" hidden>
+    <div class="detail-head">
+      <h2 id="d-title">Group</h2>
+      <span id="d-status" class="pill"></span>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title"><svg class="ic"><use href="#i-pulse"/></svg> Status</h3>
+      <div class="row"><span class="row-label">Listener</span><span id="d-listener" class="row-value"></span></div>
+      <div class="row"><span class="row-label">First-call capture</span><span id="d-capture" class="row-value"></span></div>
+      <div class="row"><span class="row-label">Chat ID</span><span id="d-chatid" class="row-value mono"></span></div>
+      <div class="row" id="d-note-row" hidden><span class="row-label">Note</span><span id="d-note" class="row-value"></span></div>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title"><svg class="ic"><use href="#i-mic"/></svg> Recording</h3>
+      <div class="row switch-row">
+        <div class="switch-text">
+          <span class="row-label strong">Auto-join calls</span>
+          <span class="row-sub">Listener joins voice chats automatically</span>
+        </div>
+        <button id="d-autojoin" class="switch" role="switch" aria-checked="false" aria-label="Auto-join calls"><span class="knob"></span></button>
+      </div>
+      <div class="row switch-row">
+        <div class="switch-text">
+          <span class="row-label strong">Summaries</span>
+          <span class="row-sub">Post a summary after each call</span>
+        </div>
+        <button id="d-summaries" class="switch" role="switch" aria-checked="false" aria-label="Summaries"><span class="knob"></span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title"><svg class="ic"><use href="#i-globe"/></svg> Language</h3>
+      <div class="seg" role="group" aria-label="Bot language">
+        <button id="d-lang-fr" class="seg-btn">Français</button>
+        <button id="d-lang-en" class="seg-btn">English</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="d-pause" class="btn btn-primary"></button>
+      <button id="d-unregister" class="btn btn-danger">
+        <svg class="ic"><use href="#i-trash"/></svg> Unregister group
+      </button>
+    </div>
+    <p class="danger-hint">Unregistering stops all capture in this group. The bot stays a member; activation can be run again later.</p>
+  </section>
+</main>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
