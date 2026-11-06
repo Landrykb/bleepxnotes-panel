@@ -94,26 +94,35 @@
     <span class="brand-icon"><svg class="ic"><use href="#i-mic"/></svg></span>
     <div class="brand-text">
       <h1>BleepxNotes</h1>
-      <p>Group control centre</p>
+      <p data-i18n="brand_subtitle">Group control centre</p>
     </div>
   </div>
-  <span id="demo-badge" class="demo-badge" hidden>Demo data</span>
+  <div class="header-side">
+    <!-- The OPENER's personal language (not any group's): writes the
+         stored per-user preference bot-side (set_ui_lang) and
+         re-renders this panel in the chosen language. -->
+    <div class="seg ui-lang-seg" role="group" aria-label="Panel language">
+      <button id="ui-lang-fr" class="seg-btn">FR</button>
+      <button id="ui-lang-en" class="seg-btn">EN</button>
+    </div>
+    <span id="demo-badge" class="demo-badge" hidden data-i18n="demo_data">Demo data</span>
+  </div>
 </header>
 
 <main>
   <!-- ============ VIEW: groups list ============ -->
   <section id="view-list" class="view">
     <div class="list-head">
-      <h2><svg class="ic"><use href="#i-users"/></svg> Registered groups</h2>
+      <h2><svg class="ic"><use href="#i-users"/></svg> <span data-i18n="registered_groups">Registered groups</span></h2>
       <span id="group-count" class="count-pill"></span>
     </div>
     <div id="group-list" class="group-list"></div>
     <div id="list-empty" class="empty-note" hidden>
       <svg class="ic lg"><use href="#i-shield"/></svg>
-      <p><strong>Nothing loaded here.</strong></p>
-      <p>This panel only fills when the bot launches it with your data:
+      <p><strong data-i18n="empty_title">Nothing loaded here.</strong></p>
+      <p data-i18n-html="empty_body">This panel only fills when the bot launches it with your data:
       in your chat with <strong>@bleepxnotes_bot</strong>, send <strong>/notes_groups</strong>
-      and tap <strong>Open control panel</strong>. Opened from the bot's profile or a
+      and tap <strong>Open the panel</strong>. Opened from the bot's profile or a
       menu button it stays empty — and it only ever works for the bot owner's account.</p>
     </div>
   </section>
@@ -126,45 +135,45 @@
     </div>
 
     <div class="card">
-      <h3 class="card-title"><svg class="ic"><use href="#i-pulse"/></svg> Status</h3>
-      <div class="row"><span class="row-label">Notetaker</span><span id="d-live" class="row-value"></span></div>
-      <div class="row"><span class="row-label">Listener</span><span id="d-listener" class="row-value"></span></div>
-      <div class="row"><span class="row-label">First-call capture</span><span id="d-capture" class="row-value"></span></div>
-      <div class="row"><span class="row-label">Chat ID</span><span id="d-chatid" class="row-value mono"></span></div>
-      <div class="row" id="d-note-row" hidden><span class="row-label">Note</span><span id="d-note" class="row-value"></span></div>
+      <h3 class="card-title"><svg class="ic"><use href="#i-pulse"/></svg> <span data-i18n="card_status">Status</span></h3>
+      <div class="row"><span class="row-label" data-i18n="row_notetaker">Notetaker</span><span id="d-live" class="row-value"></span></div>
+      <div class="row"><span class="row-label" data-i18n="row_listener">Listener</span><span id="d-listener" class="row-value"></span></div>
+      <div class="row"><span class="row-label" data-i18n="row_first_call">First-call capture</span><span id="d-capture" class="row-value"></span></div>
+      <div class="row"><span class="row-label" data-i18n="row_chat_id">Chat ID</span><span id="d-chatid" class="row-value mono"></span></div>
+      <div class="row" id="d-note-row" hidden><span class="row-label" data-i18n="row_note">Note</span><span id="d-note" class="row-value"></span></div>
     </div>
 
     <div class="card">
-      <h3 class="card-title"><svg class="ic"><use href="#i-mic"/></svg> Commands</h3>
+      <h3 class="card-title"><svg class="ic"><use href="#i-mic"/></svg> <span data-i18n="card_commands">Commands</span></h3>
       <div class="cmd-row" id="d-joinstop-row" hidden>
-        <button id="d-join" class="btn btn-success cmd-btn"><svg class="ic"><use href="#i-mic"/></svg> Start notetaker</button>
-        <button id="d-stop" class="btn btn-danger cmd-btn"><svg class="ic"><use href="#i-stop"/></svg> Stop</button>
+        <button id="d-join" class="btn btn-success cmd-btn"><svg class="ic"><use href="#i-mic"/></svg> <span data-i18n="cmd_start">Start notetaker</span></button>
+        <button id="d-stop" class="btn btn-danger cmd-btn"><svg class="ic"><use href="#i-stop"/></svg> <span data-i18n="cmd_stop">Stop</span></button>
       </div>
-      <button id="d-activate" class="btn btn-primary" hidden><svg class="ic"><use href="#i-rocket"/></svg> <span id="d-activate-label">Activate BleepxNotes</span></button>
-      <button id="d-ignore" class="btn btn-ghost" hidden>Ignore activation request</button>
+      <button id="d-activate" class="btn btn-primary" hidden><svg class="ic"><use href="#i-rocket"/></svg> <span id="d-activate-label" data-i18n="cmd_activate">Activate BleepxNotes</span></button>
+      <button id="d-ignore" class="btn btn-ghost" hidden><span data-i18n="cmd_ignore">Ignore activation request</span></button>
       <p class="cmd-hint" id="d-cmd-hint" hidden></p>
     </div>
 
     <div class="card">
-      <h3 class="card-title"><svg class="ic"><use href="#i-mic"/></svg> Recording</h3>
+      <h3 class="card-title"><svg class="ic"><use href="#i-mic"/></svg> <span data-i18n="card_recording">Recording</span></h3>
       <div class="row switch-row">
         <div class="switch-text">
-          <span class="row-label strong">Auto-join calls</span>
-          <span class="row-sub">Listener joins voice chats automatically</span>
+          <span class="row-label strong" data-i18n="rec_autojoin">Auto-join calls</span>
+          <span class="row-sub" data-i18n="rec_autojoin_sub">Listener joins voice chats automatically</span>
         </div>
         <button id="d-autojoin" class="switch" role="switch" aria-checked="false" aria-label="Auto-join calls"><span class="knob"></span></button>
       </div>
       <div class="row switch-row">
         <div class="switch-text">
-          <span class="row-label strong">Summaries</span>
-          <span class="row-sub">Post a summary after each call</span>
+          <span class="row-label strong" data-i18n="rec_summaries">Summaries</span>
+          <span class="row-sub" data-i18n="rec_summaries_sub">Post a summary after each call</span>
         </div>
         <button id="d-summaries" class="switch" role="switch" aria-checked="false" aria-label="Summaries"><span class="knob"></span></button>
       </div>
     </div>
 
     <div class="card">
-      <h3 class="card-title"><svg class="ic"><use href="#i-globe"/></svg> Language</h3>
+      <h3 class="card-title"><svg class="ic"><use href="#i-globe"/></svg> <span data-i18n="card_language">Language</span></h3>
       <div class="seg" role="group" aria-label="Bot language">
         <button id="d-lang-fr" class="seg-btn">Français</button>
         <button id="d-lang-en" class="seg-btn">English</button>
@@ -172,30 +181,30 @@
     </div>
 
     <div class="card">
-      <h3 class="card-title"><svg class="ic"><use href="#i-file"/></svg> Latest summary</h3>
+      <h3 class="card-title"><svg class="ic"><use href="#i-file"/></svg> <span data-i18n="card_latest_summary">Latest summary</span></h3>
       <div id="d-summary-block" hidden>
-        <div class="row"><span class="row-label">Date</span><span id="d-summary-date" class="row-value"></span></div>
+        <div class="row"><span class="row-label" data-i18n="row_date">Date</span><span id="d-summary-date" class="row-value"></span></div>
         <div id="d-summary-text" class="summary-text"></div>
-        <p class="cmd-hint" id="d-summary-trunc" hidden>Long summary — the panel shows the first part of it. The full text is one tap away:</p>
-        <button id="d-send-summary" class="btn btn-ghost"><svg class="ic"><use href="#i-send"/></svg> Send the summary to my DM</button>
+        <p class="cmd-hint" id="d-summary-trunc" hidden data-i18n="summary_trunc">Long summary — the panel shows the first part of it. The full text is one tap away:</p>
+        <button id="d-send-summary" class="btn btn-ghost"><svg class="ic"><use href="#i-send"/></svg> <span data-i18n="send_summary_btn">Send the summary to my DM</span></button>
       </div>
-      <p class="row-sub pad" id="d-summary-none" hidden>No summary yet for this group — the first summarized call will appear here, readable on this screen.</p>
+      <p class="row-sub pad" id="d-summary-none" hidden data-i18n="summary_none">No summary yet for this group — the first summarized call will appear here, readable on this screen.</p>
     </div>
 
     <div class="card">
-      <h3 class="card-title"><svg class="ic"><use href="#i-clock"/></svg> Meeting history</h3>
+      <h3 class="card-title"><svg class="ic"><use href="#i-clock"/></svg> <span data-i18n="card_history">Meeting history</span></h3>
       <div id="d-history"></div>
-      <p class="row-sub pad" id="d-history-none" hidden>No earlier meetings recorded for this group yet.</p>
-      <p class="cmd-hint" id="d-history-more" hidden>Showing the most recent meetings — older ones are not listed here.</p>
+      <p class="row-sub pad" id="d-history-none" hidden data-i18n="history_none">No earlier meetings recorded for this group yet.</p>
+      <p class="cmd-hint" id="d-history-more" hidden data-i18n="history_more">Showing the most recent meetings — older ones are not listed here.</p>
     </div>
 
     <div class="actions">
       <button id="d-pause" class="btn btn-primary"></button>
       <button id="d-unregister" class="btn btn-danger">
-        <svg class="ic"><use href="#i-trash"/></svg> Unregister group
+        <svg class="ic"><use href="#i-trash"/></svg> <span data-i18n="unregister_group">Unregister group</span>
       </button>
     </div>
-    <p class="danger-hint">Unregistering stops all capture in this group. The bot stays a member; activation can be run again later.</p>
+    <p class="danger-hint" data-i18n="unregister_hint">Unregistering stops all capture in this group. The bot stays a member; activation can be run again later.</p>
   </section>
 </main>
 
