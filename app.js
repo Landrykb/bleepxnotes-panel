@@ -11,7 +11,19 @@
  *   send_summary                        -> value: null (full text to the DM;
  *                                          the text itself is already in
  *                                          the snapshot, readable in-panel)
+ *   send_history_summary                -> value: meeting id (full summary
+ *                                          of that past meeting to the DM)
+ *   send_recording                      -> value: meeting id (the meeting's
+ *                                          kept audio files to the DM)
  *   activate_group | ignore_activation  -> value: null (activation flow)
+ *
+ * Group history rides in the snapshot as METADATA only (per group:
+ * `history`: [{id, dur, sum, rec}] newest-first + `history_more`):
+ * the meeting id is its timestamp (YYYYMMDD-HHMMSS dir name), `sum`
+ * is the summary's length in chars (0 = none), `rec` flags a kept
+ * recording. Texts and audio never ride in the URL — the two actions
+ * above fetch them through the bot, which re-checks ownership
+ * against the live manifest before sending anything.
  *
  * The panel is self-contained: live status and the latest summary are
  * read from the snapshot on this screen — nothing sends the user back
@@ -69,6 +81,9 @@ const els = {
   dSummaryTrunc: $("d-summary-trunc"),
   dSendSummary: $("d-send-summary"),
   dSummaryNone: $("d-summary-none"),
+  dHistory: $("d-history"),
+  dHistoryNone: $("d-history-none"),
+  dHistoryMore: $("d-history-more"),
   dPause: $("d-pause"),
   dUnregister: $("d-unregister"),
   toast: $("toast"),
@@ -86,6 +101,11 @@ const MOCK_GROUPS = [
       date: "2026-11-04", truncated: false,
       text: "Résumé — IN4BOX — Team\n\n• Point d'avancement : la maquette du panneau est validée.\n• Décision : lancement du pilote en janvier.\n• Action : Landry envoie la liste des producteurs avant vendredi.",
     },
+    history: [
+      { id: "20261104-193000", dur: 1740, sum: 812, rec: 1 },
+      { id: "20261102-100500", dur: 905, sum: 640, rec: 0 },
+    ],
+    history_more: false,
   },
   {
     chat_id: -1002001002, title: "Book Club — Harold & Landry", status: "degraded",
@@ -93,6 +113,8 @@ const MOCK_GROUPS = [
     first_call: "verified", note: "Listener not seen in the group — capture paused until it rejoins.",
     listener_state: "recording", in_call: false, call_started_at: null,
     summary: null,
+    history: [],
+    history_more: false,
   },
   {
     chat_id: -1002001003, title: "Weekend Runners", status: "paused",
@@ -103,6 +125,10 @@ const MOCK_GROUPS = [
       date: "2026-11-01", truncated: false,
       text: "Summary — Weekend Runners\n\n• Sunday route confirmed: river loop, 12 km.\n• Action: Sam brings the water station list.",
     },
+    history: [
+      { id: "20261101-083000", dur: 1500, sum: 640, rec: 0 },
+    ],
+    history_more: false,
   },
   {
     chat_id: -1002001004, title: "Studio Sessions", status: "needs_action",
@@ -110,6 +136,8 @@ const MOCK_GROUPS = [
     first_call: "pending", note: "Bot needs admin with invite rights to finish pairing — or add the listener account manually once.",
     listener_state: "recording", in_call: false, call_started_at: null,
     summary: null,
+    history: [],
+    history_more: false,
   },
 ];
 
@@ -276,6 +304,30 @@ function fmtTime(unixSeconds) {
   }
 }
 
+/* History entries: the meeting id IS the timestamp (YYYYMMDD-HHMMSS). */
+function fmtMeetingStamp(id) {
+  const m = /^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})$/.exec(id || "");
+  if (!m) return id || "";
+  const d = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+  try {
+    return d.toLocaleDateString([], {
+      day: "numeric", month: "short", year: "numeric",
+    }) + " · " + d.toLocaleTimeString([], {
+      hour: "2-digit", minute: "2-digit",
+    });
+  } catch (e) {
+    return m[1] + "-" + m[2] + "-" + m[3];
+  }
+}
+
+function fmtDuration(seconds) {
+  if (seconds == null) return "";
+  const s = Math.max(0, Math.round(seconds));
+  const mm = Math.floor(s / 60);
+  const ss = String(s % 60).padStart(2, "0");
+  return mm + ":" + ss;
+}
+
 function renderDetail() {
   const g = current;
   if (!g) return;
@@ -370,6 +422,8 @@ function renderDetail() {
     els.dSummaryNone.hidden = false;
   }
 
+  renderHistory();
+
   setSwitch(els.dAutojoin, !!g.autojoin);
   setSwitch(els.dSummaries, !!g.summaries);
   els.dLangFr.classList.toggle("active", g.lang === "fr");
@@ -381,6 +435,57 @@ function renderDetail() {
     : icon("pause") + " Pause group";
   els.dPause.hidden = g.status === "unregistered";
   els.dUnregister.hidden = g.status === "unregistered";
+}
+
+/* Meeting history: metadata from the snapshot; the summary text and
+ * the recording itself are fetched through the bot (sendData), which
+ * re-checks that the meeting belongs to this group before sending. */
+function renderHistory() {
+  const g = current;
+  if (!g) return;
+  const hist = Array.isArray(g.history) ? g.history : [];
+  els.dHistoryNone.hidden = hist.length > 0;
+  els.dHistoryMore.hidden = !g.history_more;
+  els.dHistory.innerHTML = hist.map((e) => {
+    const bits = [];
+    const dur = fmtDuration(e.dur);
+    if (dur) bits.push(dur);
+    bits.push(e.sum > 0 ? "Summary kept" : "No summary");
+    if (e.rec) bits.push("Recording kept");
+    let buttons = "";
+    if (e.sum > 0) {
+      buttons += '<button class="btn btn-ghost hist-btn" data-act="sum" data-id="' +
+        esc(e.id) + '">' + icon("file") + " Summary</button>";
+    }
+    if (e.rec) {
+      buttons += '<button class="btn btn-ghost hist-btn" data-act="rec" data-id="' +
+        esc(e.id) + '">' + icon("mic") + " Recording</button>";
+    }
+    return (
+      '<div class="hist-row">' +
+        '<div class="hist-main">' +
+          '<span class="hist-when">' + esc(fmtMeetingStamp(e.id)) + "</span>" +
+          '<span class="hist-meta">' + esc(bits.join(" · ")) + "</span>" +
+        "</div>" +
+        (buttons ? '<div class="hist-btns">' + buttons + "</div>" : "") +
+      "</div>"
+    );
+  }).join("");
+
+  els.dHistory.querySelectorAll(".hist-btn").forEach((b) => {
+    b.addEventListener("click", () => {
+      if (!current) return;
+      const id = b.getAttribute("data-id");
+      haptic("selection");
+      if (b.getAttribute("data-act") === "sum") {
+        sendAction("send_history_summary", current.chat_id, id);
+        if (!DEMO) toast("Summary sent — it lands in this chat");
+      } else {
+        sendAction("send_recording", current.chat_id, id);
+        if (!DEMO) toast("Recording sent — it lands in this chat");
+      }
+    });
+  });
 }
 
 function openDetail(g) {
