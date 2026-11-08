@@ -21,6 +21,9 @@
  *                                          members may run this one)
  *   add_task                            -> value: { text, owner } (appended
  *                                          to the current block; members too)
+ *   assign_task                         -> value: { row, owner } (owner is a
+ *                                          team first name or « À confirmer »;
+ *                                          sheet + meeting Doc + audit log)
  *   set_ui_lang                         -> value: "fr" | "en", chat_id: null
  *                                          (PERSONAL: the opener's stored
  *                                          language preference — the panel
@@ -110,6 +113,7 @@ const els = {
   dTaskText: $("d-task-text"),
   dTaskOwner: $("d-task-owner"),
   dTaskAdd: $("d-task-add"),
+  dOwnerList: $("d-owner-list"),
   dSummaryNone: $("d-summary-none"),
   dHistory: $("d-history"),
   dHistoryNone: $("d-history-none"),
@@ -162,6 +166,7 @@ const UI_STRINGS = {
     "tasks_hint": "Tap a task to tick it off — the shared tracker updates at once.",
     "summary_doc_btn": "Full summary (Doc)",
     "tasks_sheet_btn": "Open the shared tracker",
+    "tasks_assign_to": "Reassign to:",
     "row_date": "Date",
     "summary_trunc": "Long summary — the panel shows the first part of it. The full text is one tap away:",
     "send_summary_btn": "Send the summary to my DM",
@@ -264,6 +269,7 @@ const UI_STRINGS = {
     "tasks_hint": "Touchez une tâche pour la cocher — le tableau partagé se met à jour aussitôt.",
     "summary_doc_btn": "Résumé complet (Doc)",
     "tasks_sheet_btn": "Ouvrir le tableau partagé",
+    "tasks_assign_to": "Réassigner à :",
     "row_date": "Date",
     "summary_trunc": "Résumé long — le panneau n'en montre que le début. Le texte complet est à un toucher :",
     "send_summary_btn": "Envoyer le résumé en message privé",
@@ -389,6 +395,7 @@ const MOCK_GROUPS = [
     },
     tasks: {
       label: "Réunion IN4BOX — 2026-11-04", date: "2026-11-04",
+      owners: ["Landry", "Mikhaël-Christ", "Jacques", "Dimas"],
       doc_url: "https://docs.google.com/", sheet_url: "https://docs.google.com/",
       items: [
         { row: 2, action: "Envoyer la liste des producteurs", owner: "Landry", deadline: "à définir", status: "À faire", done_by: "" },
@@ -803,8 +810,15 @@ function renderTasks() {
   }
   els.dTaskText.placeholder = S("tasks_new_placeholder");
   els.dTaskOwner.placeholder = S("tasks_owner_label");
+  if (Array.isArray(tk.owners)) {
+    els.dOwnerList.innerHTML = tk.owners.map((o) =>
+      '<option value="' + esc(o) + '">').join("");
+  }
+  assignOpenFor = -1;
   drawTasks();
 }
+
+let assignOpenFor = -1; // item index whose reassign picker is open
 
 function drawTasks() {
   const g = current;
@@ -813,32 +827,61 @@ function drawTasks() {
   els.dTasks.innerHTML = tk.items.map((it, i) => {
     const isDone = it.status === "Fait";
     if (isDone) done++;
-    const meta = [it.owner,
-                  it.deadline && it.deadline !== "à définir" ? it.deadline : ""]
-      .filter(Boolean).join(" · ");
     const by = isDone && it.done_by
       ? fmt("tasks_done_by", { name: String(it.done_by).split(" · ")[0] })
       : "";
-    return '<button class="task-row' + (isDone ? " done" : "")
-      + (it.pending ? " pending" : "") + '" data-i="' + i + '">'
-      + '<span class="task-box">' + (isDone ? icon("check") : "") + "</span>"
+    const dl = it.deadline && it.deadline !== "à définir" ? it.deadline : "";
+    let html = '<div class="task-row' + (isDone ? " done" : "")
+      + (it.pending ? " pending" : "") + '">'
+      + '<button class="task-box-btn" data-t="' + i + '">'
+      + '<span class="task-box">' + (isDone ? icon("check") : "") + "</span></button>"
       + '<span class="task-main"><span class="task-text">' + esc(it.action)
-      + "</span>"
-      + (meta || by
-          ? '<span class="task-meta">'
-            + esc([meta, by].filter(Boolean).join(" · ")) + "</span>"
-          : "")
-      + "</span></button>";
+      + '</span><span class="task-meta">'
+      + '<button class="task-owner" data-a="' + i + '">'
+      + esc(it.owner || "À confirmer") + "</button>"
+      + (dl ? " · " + esc(dl) : "")
+      + (by ? " · " + esc(by) : "")
+      + "</span></span></div>";
+    if (assignOpenFor === i && Array.isArray(tk.owners)) {
+      html += '<div class="assign-picker"><span class="assign-label">'
+        + esc(S("tasks_assign_to")) + "</span>"
+        + tk.owners.concat(["À confirmer"]).map((name) =>
+            '<button class="assign-chip'
+            + (name === it.owner ? " current" : "")
+            + '" data-o="' + i + '" data-name="' + esc(name) + '">'
+            + esc(name) + "</button>").join("")
+        + "</div>";
+    }
+    return html;
   }).join("");
   els.dTasksProgress.textContent = fmt("tasks_progress",
                                        { done: done, total: tk.items.length });
-  els.dTasks.querySelectorAll(".task-row").forEach((row) => {
-    row.addEventListener("click", () => {
-      const it = tk.items[Number(row.getAttribute("data-i"))];
+  els.dTasks.querySelectorAll(".task-box-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const it = tk.items[Number(btn.getAttribute("data-t"))];
       if (!it || it.pending) return;
       it.status = it.status === "Fait" ? "À faire" : "Fait";
       if (it.status === "Fait") it.done_by = ""; // the bot stamps the name
       sendAction("toggle_task", g.chat_id, it.row);
+      drawTasks();
+    });
+  });
+  els.dTasks.querySelectorAll(".task-owner").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const i = Number(btn.getAttribute("data-a"));
+      if (!tk.items[i] || tk.items[i].pending) return;
+      assignOpenFor = assignOpenFor === i ? -1 : i;
+      drawTasks();
+    });
+  });
+  els.dTasks.querySelectorAll(".assign-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const it = tk.items[Number(chip.getAttribute("data-o"))];
+      if (!it || it.pending) return;
+      it.owner = chip.getAttribute("data-name");
+      assignOpenFor = -1;
+      sendAction("assign_task", g.chat_id,
+                 { row: it.row, owner: it.owner });
       drawTasks();
     });
   });

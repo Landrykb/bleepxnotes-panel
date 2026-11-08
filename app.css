@@ -233,11 +233,29 @@ body { padding: 14px 14px calc(20px + env(safe-area-inset-bottom)); max-width: 5
 /* ---------- task tracker ---------- */
 .task-row {
   display: flex; align-items: flex-start; gap: 10px; width: 100%;
-  text-align: left; background: none; border: none; cursor: pointer;
   padding: 9px 2px; border-top: 1px solid rgba(128, 128, 128, 0.18);
-  font: inherit; color: var(--text);
+  color: var(--text);
 }
 .task-row:first-child { border-top: none; }
+.task-box-btn {
+  background: none; border: none; padding: 0; cursor: pointer; flex: none;
+}
+.task-owner {
+  background: rgba(128, 128, 128, 0.14); border: none; border-radius: 999px;
+  padding: 1px 8px; font: inherit; font-size: 12px; color: var(--text);
+  cursor: pointer;
+}
+.assign-picker {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  padding: 4px 2px 10px 33px;
+}
+.assign-label { font-size: 12px; opacity: 0.6; }
+.assign-chip {
+  background: none; border: 1px solid rgba(128, 128, 128, 0.4);
+  border-radius: 999px; padding: 3px 10px; font: inherit;
+  font-size: 12.5px; color: var(--text); cursor: pointer;
+}
+.assign-chip.current { background: #2e7d32; border-color: #2e7d32; color: #fff; }
 .task-box {
   flex: none; width: 21px; height: 21px; margin-top: 1px;
   border: 2px solid rgba(128, 128, 128, 0.55); border-radius: 6px;

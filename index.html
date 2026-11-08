@@ -200,7 +200,8 @@
       <button id="d-tasks-sheet" class="btn btn-ghost" hidden><svg class="ic"><use href="#i-file"/></svg> <span data-i18n="tasks_sheet_btn">Open the shared tracker</span></button>
       <div class="task-add">
         <input id="d-task-text" type="text" maxlength="500" placeholder="New task…">
-        <input id="d-task-owner" type="text" maxlength="60" placeholder="Owner">
+        <input id="d-task-owner" type="text" maxlength="60" placeholder="Owner" list="d-owner-list">
+        <datalist id="d-owner-list"></datalist>
         <button id="d-task-add" class="btn btn-primary"><span data-i18n="tasks_add">Add a task</span></button>
       </div>
       <p class="cmd-hint" data-i18n="tasks_hint">Tap a task to tick it off — the shared tracker updates at once.</p>
