@@ -143,7 +143,7 @@
       <div class="row" id="d-note-row" hidden><span class="row-label" data-i18n="row_note">Note</span><span id="d-note" class="row-value"></span></div>
     </div>
 
-    <div class="card">
+    <div class="card owner-only">
       <h3 class="card-title"><svg class="ic"><use href="#i-mic"/></svg> <span data-i18n="card_commands">Commands</span></h3>
       <div class="cmd-row" id="d-joinstop-row" hidden>
         <button id="d-join" class="btn btn-success cmd-btn"><svg class="ic"><use href="#i-mic"/></svg> <span data-i18n="cmd_start">Start notetaker</span></button>
@@ -154,7 +154,7 @@
       <p class="cmd-hint" id="d-cmd-hint" hidden></p>
     </div>
 
-    <div class="card">
+    <div class="card owner-only">
       <h3 class="card-title"><svg class="ic"><use href="#i-mic"/></svg> <span data-i18n="card_recording">Recording</span></h3>
       <div class="row switch-row">
         <div class="switch-text">
@@ -172,7 +172,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card owner-only">
       <h3 class="card-title"><svg class="ic"><use href="#i-globe"/></svg> <span data-i18n="card_language">Language</span></h3>
       <div class="seg" role="group" aria-label="Bot language">
         <button id="d-lang-fr" class="seg-btn">Français</button>
@@ -187,8 +187,23 @@
         <div id="d-summary-text" class="summary-text"></div>
         <p class="cmd-hint" id="d-summary-trunc" hidden data-i18n="summary_trunc">Long summary — the panel shows the first part of it. The full text is one tap away:</p>
         <button id="d-send-summary" class="btn btn-ghost"><svg class="ic"><use href="#i-send"/></svg> <span data-i18n="send_summary_btn">Send the summary to my DM</span></button>
+        <button id="d-summary-doc" class="btn btn-ghost" hidden><svg class="ic"><use href="#i-file"/></svg> <span data-i18n="summary_doc_btn">Full summary (Doc)</span></button>
       </div>
       <p class="row-sub pad" id="d-summary-none" hidden data-i18n="summary_none">No summary yet for this group — the first summarized call will appear here, readable on this screen.</p>
+    </div>
+
+    <div class="card" id="d-tasks-card" hidden>
+      <h3 class="card-title"><svg class="ic"><use href="#i-check"/></svg> <span data-i18n="card_tasks">Action tracker</span></h3>
+      <p class="row-sub pad" id="d-tasks-label"></p>
+      <div id="d-tasks"></div>
+      <p class="cmd-hint" id="d-tasks-progress"></p>
+      <button id="d-tasks-sheet" class="btn btn-ghost" hidden><svg class="ic"><use href="#i-file"/></svg> <span data-i18n="tasks_sheet_btn">Open the shared tracker</span></button>
+      <div class="task-add">
+        <input id="d-task-text" type="text" maxlength="500" placeholder="New task…">
+        <input id="d-task-owner" type="text" maxlength="60" placeholder="Owner">
+        <button id="d-task-add" class="btn btn-primary"><span data-i18n="tasks_add">Add a task</span></button>
+      </div>
+      <p class="cmd-hint" data-i18n="tasks_hint">Tap a task to tick it off — the shared tracker updates at once.</p>
     </div>
 
     <div class="card">
@@ -198,13 +213,13 @@
       <p class="cmd-hint" id="d-history-more" hidden data-i18n="history_more">Showing the most recent meetings — older ones are not listed here.</p>
     </div>
 
-    <div class="actions">
+    <div class="actions owner-only">
       <button id="d-pause" class="btn btn-primary"></button>
       <button id="d-unregister" class="btn btn-danger">
         <svg class="ic"><use href="#i-trash"/></svg> <span data-i18n="unregister_group">Unregister group</span>
       </button>
     </div>
-    <p class="danger-hint" data-i18n="unregister_hint">Unregistering stops all capture in this group. The bot stays a member; activation can be run again later.</p>
+    <p class="danger-hint owner-only" data-i18n="unregister_hint">Unregistering stops all capture in this group. The bot stays a member; activation can be run again later.</p>
   </section>
 </main>
 

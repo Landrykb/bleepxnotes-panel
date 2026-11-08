@@ -219,11 +219,52 @@ body { padding: 14px 14px calc(20px + env(safe-area-inset-bottom)); max-width: 5
 @keyframes recpulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 .row-value.rec { color: #d70015; }
 .summary-text {
-  white-space: pre-wrap; word-break: break-word;
+  word-break: break-word;
   font-size: 14px; line-height: 1.55; color: var(--text);
   background: var(--bg); border-radius: 10px; padding: 12px;
   margin: 8px 0 4px; max-height: 340px; overflow-y: auto;
 }
+.summary-text h4 { margin: 12px 0 4px; font-size: 14px; }
+.summary-text h4:first-child { margin-top: 0; }
+.summary-text p { margin: 4px 0; }
+.summary-text .md-list { margin: 4px 0; padding-left: 18px; }
+.summary-text .md-list li { margin: 2px 0; }
+
+/* ---------- task tracker ---------- */
+.task-row {
+  display: flex; align-items: flex-start; gap: 10px; width: 100%;
+  text-align: left; background: none; border: none; cursor: pointer;
+  padding: 9px 2px; border-top: 1px solid rgba(128, 128, 128, 0.18);
+  font: inherit; color: var(--text);
+}
+.task-row:first-child { border-top: none; }
+.task-box {
+  flex: none; width: 21px; height: 21px; margin-top: 1px;
+  border: 2px solid rgba(128, 128, 128, 0.55); border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+}
+.task-box .ic { width: 13px; height: 13px; }
+.task-row.done .task-box { background: #2e7d32; border-color: #2e7d32; }
+.task-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.task-text { font-size: 14.5px; line-height: 1.4; }
+.task-row.done .task-text { text-decoration: line-through; opacity: 0.55; }
+.task-meta { font-size: 12px; opacity: 0.6; }
+.task-row.pending { opacity: 0.55; }
+.task-add {
+  display: grid; grid-template-columns: 1fr auto; gap: 8px;
+  margin-top: 10px;
+}
+.task-add input {
+  font: inherit; font-size: 14px; color: var(--text);
+  background: var(--bg); border: 1px solid rgba(128, 128, 128, 0.35);
+  border-radius: 10px; padding: 9px 11px; min-width: 0;
+}
+.task-add #d-task-text { grid-column: 1 / -1; }
+.task-add .btn { white-space: nowrap; }
+
+/* ---------- member mode ---------- */
+body.member .owner-only { display: none !important; }
 
 /* ---------- toast ---------- */
 .toast {

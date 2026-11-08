@@ -16,6 +16,11 @@
  *   send_recording                      -> value: meeting id (the meeting's
  *                                          kept audio files to the DM)
  *   activate_group | ignore_activation  -> value: null (activation flow)
+ *   toggle_task                         -> value: tracker sheet row (the
+ *                                          group's current task block only;
+ *                                          members may run this one)
+ *   add_task                            -> value: { text, owner } (appended
+ *                                          to the current block; members too)
  *   set_ui_lang                         -> value: "fr" | "en", chat_id: null
  *                                          (PERSONAL: the opener's stored
  *                                          language preference — the panel
@@ -96,6 +101,15 @@ const els = {
   dSummaryText: $("d-summary-text"),
   dSummaryTrunc: $("d-summary-trunc"),
   dSendSummary: $("d-send-summary"),
+  dSummaryDoc: $("d-summary-doc"),
+  dTasksCard: $("d-tasks-card"),
+  dTasksLabel: $("d-tasks-label"),
+  dTasks: $("d-tasks"),
+  dTasksProgress: $("d-tasks-progress"),
+  dTasksSheet: $("d-tasks-sheet"),
+  dTaskText: $("d-task-text"),
+  dTaskOwner: $("d-task-owner"),
+  dTaskAdd: $("d-task-add"),
   dSummaryNone: $("d-summary-none"),
   dHistory: $("d-history"),
   dHistoryNone: $("d-history-none"),
@@ -139,6 +153,15 @@ const UI_STRINGS = {
     "rec_summaries_sub": "Post a summary after each call",
     "card_language": "Language",
     "card_latest_summary": "Latest summary",
+    "card_tasks": "Action tracker",
+    "tasks_progress": "{done}/{total} done",
+    "tasks_done_by": "done by {name}",
+    "tasks_add": "Add a task",
+    "tasks_new_placeholder": "New task…",
+    "tasks_owner_label": "Owner",
+    "tasks_hint": "Tap a task to tick it off — the shared tracker updates at once.",
+    "summary_doc_btn": "Full summary (Doc)",
+    "tasks_sheet_btn": "Open the shared tracker",
     "row_date": "Date",
     "summary_trunc": "Long summary — the panel shows the first part of it. The full text is one tap away:",
     "send_summary_btn": "Send the summary to my DM",
@@ -232,6 +255,15 @@ const UI_STRINGS = {
     "rec_summaries_sub": "Publier un résumé après chaque appel",
     "card_language": "Langue",
     "card_latest_summary": "Dernier résumé",
+    "card_tasks": "Suivi des actions",
+    "tasks_progress": "{done}/{total} terminées",
+    "tasks_done_by": "fait par {name}",
+    "tasks_add": "Ajouter une tâche",
+    "tasks_new_placeholder": "Nouvelle tâche…",
+    "tasks_owner_label": "Responsable",
+    "tasks_hint": "Touchez une tâche pour la cocher — le tableau partagé se met à jour aussitôt.",
+    "summary_doc_btn": "Résumé complet (Doc)",
+    "tasks_sheet_btn": "Ouvrir le tableau partagé",
     "row_date": "Date",
     "summary_trunc": "Résumé long — le panneau n'en montre que le début. Le texte complet est à un toucher :",
     "send_summary_btn": "Envoyer le résumé en message privé",
@@ -355,6 +387,14 @@ const MOCK_GROUPS = [
       date: "2026-11-04", truncated: false,
       text: "Résumé — IN4BOX — Team\n\n• Point d'avancement : la maquette du panneau est validée.\n• Décision : lancement du pilote en janvier.\n• Action : Landry envoie la liste des producteurs avant vendredi.",
     },
+    tasks: {
+      label: "Réunion IN4BOX — 2026-11-04", date: "2026-11-04",
+      doc_url: "https://docs.google.com/", sheet_url: "https://docs.google.com/",
+      items: [
+        { row: 2, action: "Envoyer la liste des producteurs", owner: "Landry", deadline: "à définir", status: "À faire", done_by: "" },
+        { row: 3, action: "Valider la maquette du panneau", owner: "Jacques", deadline: "à définir", status: "Fait", done_by: "Jacques · 2026-11-05" },
+      ],
+    },
     history: [
       { id: "20261104-193000", dur: 1740, sum: 812, rec: 1 },
       { id: "20261102-100500", dur: 905, sum: 640, rec: 0 },
@@ -428,6 +468,14 @@ if (DEMO) {
   els.demoBadge.hidden = false;
 } else {
   groups = (snapshot && snapshot.groups) || [];
+}
+
+/* Member mode: a group member's scoped snapshot (summary + tasks for
+ * one group). Owner-only cards are hidden by CSS; the bot re-checks
+ * membership server-side on every tap regardless. */
+const IS_MEMBER = !!(snapshot && snapshot.member);
+if (IS_MEMBER) {
+  document.body.classList.add("member");
 }
 
 /* Language resolution: the snapshot's ui_lang (the opener's stored
@@ -666,13 +714,14 @@ function renderDetail() {
     els.dSummaryBlock.hidden = false;
     els.dSummaryNone.hidden = true;
     els.dSummaryDate.textContent = g.summary.date || "—";
-    els.dSummaryText.textContent = g.summary.text || "";
+    els.dSummaryText.innerHTML = mdLite(g.summary.text || "");
     els.dSummaryTrunc.hidden = !g.summary.truncated;
   } else {
     els.dSummaryBlock.hidden = true;
     els.dSummaryNone.hidden = false;
   }
 
+  renderTasks();
   renderHistory();
 
   setSwitch(els.dAutojoin, !!g.autojoin);
@@ -686,6 +735,113 @@ function renderDetail() {
     : icon("pause") + " " + esc(S("pause_group"));
   els.dPause.hidden = g.status === "unregistered";
   els.dUnregister.hidden = g.status === "unregistered";
+}
+
+/* ------------------------------------------------------- summary text */
+
+/* A tiny markdown-lite renderer for the summary: headings, bullets
+ * and **bold** — the shapes the summaries actually use. Everything is
+ * escaped first; only the renderer's own tags survive. */
+function inlineMd(s) {
+  return esc(s).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+}
+
+function mdLite(text) {
+  const lines = String(text || "").split("\n");
+  let html = "";
+  let inList = false;
+  const closeList = () => { if (inList) { html += "</ul>"; inList = false; } };
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+    const h = line.match(/^#{1,3}\s+(.*)$/);
+    const li = line.match(/^[-•]\s+(.*)$/);
+    if (h) {
+      closeList();
+      html += "<h4>" + inlineMd(h[1]) + "</h4>";
+    } else if (li) {
+      if (!inList) { html += '<ul class="md-list">'; inList = true; }
+      html += "<li>" + inlineMd(li[1]) + "</li>";
+    } else {
+      closeList();
+      if (line.trim()) html += "<p>" + inlineMd(line) + "</p>";
+    }
+  }
+  closeList();
+  return html;
+}
+
+function openExternal(url) {
+  if (!url) return;
+  if (tg && tg.openLink) tg.openLink(url);
+  else window.open(url, "_blank");
+}
+
+/* -------------------------------------------------------- task tracker */
+
+/* The group's current task block from the shared tracker sheet
+ * (snapshot-carried): a real checklist. Ticking flips the row in the
+ * sheet via the bot (toggle_task); the add form appends one
+ * (add_task). Both render optimistically — the bot's DM receipt is
+ * the confirmation, and the next panel open re-reads the sheet. */
+function renderTasks() {
+  const g = current;
+  if (!g) return;
+  const tk = g.tasks;
+  els.dSummaryDoc.hidden = !(tk && tk.doc_url);
+  if (tk && tk.doc_url) {
+    els.dSummaryDoc.onclick = () => openExternal(tk.doc_url);
+  }
+  if (!tk || !Array.isArray(tk.items)) {
+    els.dTasksCard.hidden = true;
+    return;
+  }
+  els.dTasksCard.hidden = false;
+  els.dTasksLabel.textContent = tk.label || "";
+  els.dTasksSheet.hidden = !tk.sheet_url;
+  if (tk.sheet_url) {
+    els.dTasksSheet.onclick = () => openExternal(tk.sheet_url);
+  }
+  els.dTaskText.placeholder = S("tasks_new_placeholder");
+  els.dTaskOwner.placeholder = S("tasks_owner_label");
+  drawTasks();
+}
+
+function drawTasks() {
+  const g = current;
+  const tk = g.tasks;
+  let done = 0;
+  els.dTasks.innerHTML = tk.items.map((it, i) => {
+    const isDone = it.status === "Fait";
+    if (isDone) done++;
+    const meta = [it.owner,
+                  it.deadline && it.deadline !== "à définir" ? it.deadline : ""]
+      .filter(Boolean).join(" · ");
+    const by = isDone && it.done_by
+      ? fmt("tasks_done_by", { name: String(it.done_by).split(" · ")[0] })
+      : "";
+    return '<button class="task-row' + (isDone ? " done" : "")
+      + (it.pending ? " pending" : "") + '" data-i="' + i + '">'
+      + '<span class="task-box">' + (isDone ? icon("check") : "") + "</span>"
+      + '<span class="task-main"><span class="task-text">' + esc(it.action)
+      + "</span>"
+      + (meta || by
+          ? '<span class="task-meta">'
+            + esc([meta, by].filter(Boolean).join(" · ")) + "</span>"
+          : "")
+      + "</span></button>";
+  }).join("");
+  els.dTasksProgress.textContent = fmt("tasks_progress",
+                                       { done: done, total: tk.items.length });
+  els.dTasks.querySelectorAll(".task-row").forEach((row) => {
+    row.addEventListener("click", () => {
+      const it = tk.items[Number(row.getAttribute("data-i"))];
+      if (!it || it.pending) return;
+      it.status = it.status === "Fait" ? "À faire" : "Fait";
+      if (it.status === "Fait") it.done_by = ""; // the bot stamps the name
+      sendAction("toggle_task", g.chat_id, it.row);
+      drawTasks();
+    });
+  });
 }
 
 /* Meeting history: metadata from the snapshot; the summary text and
@@ -905,7 +1061,26 @@ function setUiLang(lang) {
 els.uiLangFr.addEventListener("click", () => setUiLang("fr"));
 els.uiLangEn.addEventListener("click", () => setUiLang("en"));
 
+els.dTaskAdd.addEventListener("click", () => {
+  const g = current;
+  if (!g || !g.tasks) return;
+  const text = els.dTaskText.value.trim();
+  if (!text) return;
+  const owner = els.dTaskOwner.value.trim();
+  g.tasks.items.push({ row: 0, action: text, owner: owner, deadline: "",
+                       status: "À faire", done_by: "", pending: true });
+  els.dTaskText.value = "";
+  haptic("impact", "light");
+  sendAction("add_task", g.chat_id, { text: text, owner: owner });
+  drawTasks();
+});
+
 /* ----------------------------------------------------------------- boot */
 
 applyStaticStrings();
 renderList();
+/* A member's snapshot holds exactly one group: land on its detail —
+ * the summary and the tasks — with no list to pick from. */
+if (IS_MEMBER && groups.length === 1) {
+  openDetail(groups[0]);
+}
