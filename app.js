@@ -158,6 +158,7 @@ const UI_STRINGS = {
     "card_language": "Language",
     "card_latest_summary": "Latest summary",
     "card_tasks": "Action tracker",
+    "card_open": "Open the summary & tasks",
     "tasks_progress": "{done}/{total} done",
     "tasks_done_by": "done by {name}",
     "tasks_add": "Add a task",
@@ -261,6 +262,7 @@ const UI_STRINGS = {
     "card_language": "Langue",
     "card_latest_summary": "Dernier résumé",
     "card_tasks": "Suivi des actions",
+    "card_open": "Ouvrir le résumé et les tâches",
     "tasks_progress": "{done}/{total} terminées",
     "tasks_done_by": "fait par {name}",
     "tasks_add": "Ajouter une tâche",
@@ -578,6 +580,7 @@ function renderList() {
           '<span class="chip' + (g.summaries ? "" : " off") + '">' + icon("bell") +
             esc(S(g.summaries ? "chip_summaries_on" : "chip_summaries_off")) + "</span>" +
         "</div>" +
+        '<div class="gc-open">' + esc(S("card_open")) + '<span class="gc-open-chev">›</span></div>' +
       "</article>"
     );
   }).join("");

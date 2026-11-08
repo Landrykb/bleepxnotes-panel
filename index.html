@@ -135,6 +135,41 @@
     </div>
 
     <div class="card">
+      <h3 class="card-title"><svg class="ic"><use href="#i-file"/></svg> <span data-i18n="card_latest_summary">Latest summary</span></h3>
+      <div id="d-summary-block" hidden>
+        <div class="row"><span class="row-label" data-i18n="row_date">Date</span><span id="d-summary-date" class="row-value"></span></div>
+        <div id="d-summary-text" class="summary-text"></div>
+        <p class="cmd-hint" id="d-summary-trunc" hidden data-i18n="summary_trunc">Long summary — the panel shows the first part of it. The full text is one tap away:</p>
+        <button id="d-send-summary" class="btn btn-ghost"><svg class="ic"><use href="#i-send"/></svg> <span data-i18n="send_summary_btn">Send the summary to my DM</span></button>
+        <button id="d-summary-doc" class="btn btn-ghost" hidden><svg class="ic"><use href="#i-file"/></svg> <span data-i18n="summary_doc_btn">Full summary (Doc)</span></button>
+      </div>
+      <p class="row-sub pad" id="d-summary-none" hidden data-i18n="summary_none">No summary yet for this group — the first summarized call will appear here, readable on this screen.</p>
+    </div>
+
+    <div class="card" id="d-tasks-card" hidden>
+      <h3 class="card-title"><svg class="ic"><use href="#i-check"/></svg> <span data-i18n="card_tasks">Action tracker</span></h3>
+      <p class="row-sub pad" id="d-tasks-label"></p>
+      <div id="d-tasks"></div>
+      <p class="cmd-hint" id="d-tasks-progress"></p>
+      <button id="d-tasks-sheet" class="btn btn-ghost" hidden><svg class="ic"><use href="#i-file"/></svg> <span data-i18n="tasks_sheet_btn">Open the shared tracker</span></button>
+      <div class="task-add">
+        <input id="d-task-text" type="text" maxlength="500" placeholder="New task…">
+        <input id="d-task-owner" type="text" maxlength="60" placeholder="Owner" list="d-owner-list">
+        <datalist id="d-owner-list"></datalist>
+        <button id="d-task-add" class="btn btn-primary"><span data-i18n="tasks_add">Add a task</span></button>
+      </div>
+      <p class="cmd-hint" data-i18n="tasks_hint">Tap a task to tick it off — the shared tracker updates at once.</p>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title"><svg class="ic"><use href="#i-clock"/></svg> <span data-i18n="card_history">Meeting history</span></h3>
+      <div id="d-history"></div>
+      <p class="row-sub pad" id="d-history-none" hidden data-i18n="history_none">No earlier meetings recorded for this group yet.</p>
+      <p class="cmd-hint" id="d-history-more" hidden data-i18n="history_more">Showing the most recent meetings — older ones are not listed here.</p>
+    </div>
+
+
+    <div class="card">
       <h3 class="card-title"><svg class="ic"><use href="#i-pulse"/></svg> <span data-i18n="card_status">Status</span></h3>
       <div class="row"><span class="row-label" data-i18n="row_notetaker">Notetaker</span><span id="d-live" class="row-value"></span></div>
       <div class="row"><span class="row-label" data-i18n="row_listener">Listener</span><span id="d-listener" class="row-value"></span></div>
@@ -178,40 +213,6 @@
         <button id="d-lang-fr" class="seg-btn">Français</button>
         <button id="d-lang-en" class="seg-btn">English</button>
       </div>
-    </div>
-
-    <div class="card">
-      <h3 class="card-title"><svg class="ic"><use href="#i-file"/></svg> <span data-i18n="card_latest_summary">Latest summary</span></h3>
-      <div id="d-summary-block" hidden>
-        <div class="row"><span class="row-label" data-i18n="row_date">Date</span><span id="d-summary-date" class="row-value"></span></div>
-        <div id="d-summary-text" class="summary-text"></div>
-        <p class="cmd-hint" id="d-summary-trunc" hidden data-i18n="summary_trunc">Long summary — the panel shows the first part of it. The full text is one tap away:</p>
-        <button id="d-send-summary" class="btn btn-ghost"><svg class="ic"><use href="#i-send"/></svg> <span data-i18n="send_summary_btn">Send the summary to my DM</span></button>
-        <button id="d-summary-doc" class="btn btn-ghost" hidden><svg class="ic"><use href="#i-file"/></svg> <span data-i18n="summary_doc_btn">Full summary (Doc)</span></button>
-      </div>
-      <p class="row-sub pad" id="d-summary-none" hidden data-i18n="summary_none">No summary yet for this group — the first summarized call will appear here, readable on this screen.</p>
-    </div>
-
-    <div class="card" id="d-tasks-card" hidden>
-      <h3 class="card-title"><svg class="ic"><use href="#i-check"/></svg> <span data-i18n="card_tasks">Action tracker</span></h3>
-      <p class="row-sub pad" id="d-tasks-label"></p>
-      <div id="d-tasks"></div>
-      <p class="cmd-hint" id="d-tasks-progress"></p>
-      <button id="d-tasks-sheet" class="btn btn-ghost" hidden><svg class="ic"><use href="#i-file"/></svg> <span data-i18n="tasks_sheet_btn">Open the shared tracker</span></button>
-      <div class="task-add">
-        <input id="d-task-text" type="text" maxlength="500" placeholder="New task…">
-        <input id="d-task-owner" type="text" maxlength="60" placeholder="Owner" list="d-owner-list">
-        <datalist id="d-owner-list"></datalist>
-        <button id="d-task-add" class="btn btn-primary"><span data-i18n="tasks_add">Add a task</span></button>
-      </div>
-      <p class="cmd-hint" data-i18n="tasks_hint">Tap a task to tick it off — the shared tracker updates at once.</p>
-    </div>
-
-    <div class="card">
-      <h3 class="card-title"><svg class="ic"><use href="#i-clock"/></svg> <span data-i18n="card_history">Meeting history</span></h3>
-      <div id="d-history"></div>
-      <p class="row-sub pad" id="d-history-none" hidden data-i18n="history_none">No earlier meetings recorded for this group yet.</p>
-      <p class="cmd-hint" id="d-history-more" hidden data-i18n="history_more">Showing the most recent meetings — older ones are not listed here.</p>
     </div>
 
     <div class="actions owner-only">

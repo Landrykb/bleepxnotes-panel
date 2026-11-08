@@ -71,10 +71,17 @@ body { padding: 14px 14px calc(20px + env(safe-area-inset-bottom)); max-width: 5
 
 .group-card {
   background: var(--sec-bg); border-radius: var(--radius);
-  padding: 14px; cursor: pointer; border: 1px solid transparent;
+  padding: 14px; cursor: pointer;
+  border: 1px solid rgba(59, 130, 246, 0.55);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.12);
   transition: transform 0.08s ease, border-color 0.08s ease;
   -webkit-tap-highlight-color: transparent;
 }
+.gc-open {
+  margin-top: 12px; display: flex; align-items: center; gap: 5px;
+  font-size: 13.5px; font-weight: 650; color: #3b82f6;
+}
+.gc-open-chev { font-size: 17px; line-height: 1; }
 .group-card:active { transform: scale(0.985); }
 .gc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .gc-name { font-size: 16px; font-weight: 650; line-height: 1.25; }
